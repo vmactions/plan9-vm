@@ -126,7 +126,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         envs: 'DEBUG MYTOKEN MYTOKEN2'
         prepare: |
@@ -299,7 +299,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         envs: 'DEBUG MYTOKEN MYTOKEN2'
         prepare: |
@@ -480,7 +480,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         envs: 'DEBUG MYTOKEN MYTOKEN2'
         prepare: |
@@ -592,7 +592,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         mem: 4096
         debug: true
@@ -648,7 +648,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', '9p') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         mem: 4096
         debug: true
@@ -786,7 +786,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         envs: 'MYTOKEN MYTOKEN2'
         prepare: |
@@ -954,7 +954,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         envs: 'MYTOKEN MYTOKEN2'
         prepare: |
@@ -1071,7 +1071,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         mem: 4096
         debug: true
@@ -1130,7 +1130,7 @@ jobs:
     - name: Test in Plan9
       if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
       id: test
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         mem: 4096
         debug: true
@@ -1190,7 +1190,7 @@ jobs:
     - name: Test in Plan9
       id: testerr
       continue-on-error: true
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         debug: true
         run: |
@@ -1217,7 +1217,7 @@ jobs:
     - name: Test in Plan9
       id: testpass
       continue-on-error: true
-      uses: vmactions/plan9-vm@761075de59b47bd53f1b39e8206cc781a03049dd
+      uses: vmactions/plan9-vm@ff2a91e1fdb4dcba6a5f02a8ea86c3cd19231395
       with:
         debug: true
         run: |
