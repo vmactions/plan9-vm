@@ -71,7 +71,7 @@ jobs:
           # never a branch, never releases/latest -- so the values and the
           # image that ships in that release are a matched pair. One fetch
           # per distinct BUILDER_VERSION (cached below), not one per release.
-          os="redox"
+          os="plan9"
           mkdir -p /tmp/relindex
           # jq -r hands back the UNESCAPED string, which then lands in a sed
           # replacement (where the delimiter, & and backslash are special) and
