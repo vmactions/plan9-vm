@@ -1,10 +1,10 @@
-name: 'Redox-vm'
-description: 'Test in a real Redox virtual machine on GitHub Actions -- QEMU-powered, with SSH and two-way folder sync'
+name: 'Plan9-vm'
+description: 'Test in a real Plan9 virtual machine on GitHub Actions -- QEMU-powered, with SSH and two-way folder sync'
 inputs:
   osname:
     description: 'The OS name'
     required: true
-    default: 'Redox'
+    default: 'Plan9'
   prepare:
     description: 'Install some tools before CI runs'
     required: false
@@ -12,13 +12,13 @@ inputs:
     description: 'The CI command to run'
     required: false
   release:
-    description: 'The release version of Redox vm. Only the leading, "." separated part of it is enough, the newest matching release is used.'
+    description: 'The release version of Plan9 vm. Only the leading, "." separated part of it is enough, the newest matching release is used.'
     required: false
   arch:
-    description: 'The cpu architecture of Redox vm'
+    description: 'The cpu architecture of Plan9 vm'
     required: false
   envs:
-    description: 'The envs to pass into Redox vm'
+    description: 'The envs to pass into Plan9 vm'
     required: false
   mem:
     description: 'Set the memory size of the vm'
@@ -28,7 +28,7 @@ inputs:
     description: 'Set the cpu cores of the vm'
     required: false
   nat:
-    description: 'The NAT ports to Redox vm'
+    description: 'The NAT ports to Plan9 vm'
     required: false
   usesh:
     description: 'Deprecated and ignored. The prepare/run scripts are always executed with sh.'
@@ -74,8 +74,8 @@ outputs:
   cache-after-prepare-hit:
     description: 'true when a prepared VM image cache was restored and the prepare step was skipped, false otherwise.'
 branding:
-  icon: 'box'
-  color: 'red'
+  icon: 'moon'
+  color: 'yellow'
 
 runs:
   using: 'node24'

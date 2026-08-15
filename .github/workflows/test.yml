@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release: [ "0.9.0"
+        release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
         runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
@@ -50,23 +50,41 @@ jobs:
           - runs: "ubuntu-24.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
-          - release: "0.9.0"
+          - release: "11554"
             arch: aarch64
-          - release: "0.9.0"
+          - release: "11554"
             arch: riscv64
-          - release: "0.9.0"
+          - release: "11554"
             arch: powerpc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: sparc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: ppc64le
-          - release: "0.9.0"
+          - release: "11554"
             arch: s390x
-          - release: "0.9.0"
+          - release: "11554"
             arch: i386
-          - release: "0.9.0"
+          - release: "11554"
             arch: loongarch64
-          - release: "0.9.0"
+          - release: "11554"
+            arch: armv7
+          - release: "11952"
+            arch: aarch64
+          - release: "11952"
+            arch: riscv64
+          - release: "11952"
+            arch: powerpc64
+          - release: "11952"
+            arch: sparc64
+          - release: "11952"
+            arch: ppc64le
+          - release: "11952"
+            arch: s390x
+          - release: "11952"
+            arch: i386
+          - release: "11952"
+            arch: loongarch64
+          - release: "11952"
             arch: armv7
           - release: ""
             arch: aarch64
@@ -89,7 +107,7 @@ jobs:
 
 
     runs-on: ${{ matrix.runs }}
-    name: sshfs Redox
+    name: sshfs Plan9
     env:
       MYTOKEN : ${{ secrets.MYTOKEN }}
       MYTOKEN2: "value2"
@@ -98,21 +116,21 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 #    - name: Creating Web console
-#      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
+#      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
 #      uses: vmactions/cf-tunnel@v0
 #      id: tunnel
 #      with:
 #        protocol: http
 #        port: 8000
 
-    - name: Test in Redox
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
+    - name: Test in Plan9
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
       id: test
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         envs: 'DEBUG MYTOKEN MYTOKEN2'
         prepare: |
-          uname -a
+          echo anyvm
         mem: 4096
         release: ${{ matrix.release }}
         arch: ${{ matrix.arch }}
@@ -133,12 +151,14 @@ jobs:
           fi
           echo "TEST_ENV=abc" >>${GITHUB_ENV}
           echo "textfromvm" >$GITHUB_WORKSPACE/vm.txt
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
 
     - name: Test NAT
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
       env:
         VM_USER: ""
       run: |
@@ -147,12 +167,14 @@ jobs:
         [ "$TEST_ENV" = "abc" ]
         ssh -v -p 20022 ${VM_USER:-root}@localhost  "uname -a;whoami;pwd"
     - name: Test custom shell
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
-      shell: redox {0}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
+      shell: plan9 {0}
       run: |
         pwd
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
     - name: Collect VM debug artifacts
       if: failure()
@@ -185,7 +207,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release: [ "0.9.0"
+        release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
         runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
@@ -209,23 +231,41 @@ jobs:
           - runs: "ubuntu-24.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
-          - release: "0.9.0"
+          - release: "11554"
             arch: aarch64
-          - release: "0.9.0"
+          - release: "11554"
             arch: riscv64
-          - release: "0.9.0"
+          - release: "11554"
             arch: powerpc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: sparc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: ppc64le
-          - release: "0.9.0"
+          - release: "11554"
             arch: s390x
-          - release: "0.9.0"
+          - release: "11554"
             arch: i386
-          - release: "0.9.0"
+          - release: "11554"
             arch: loongarch64
-          - release: "0.9.0"
+          - release: "11554"
+            arch: armv7
+          - release: "11952"
+            arch: aarch64
+          - release: "11952"
+            arch: riscv64
+          - release: "11952"
+            arch: powerpc64
+          - release: "11952"
+            arch: sparc64
+          - release: "11952"
+            arch: ppc64le
+          - release: "11952"
+            arch: s390x
+          - release: "11952"
+            arch: i386
+          - release: "11952"
+            arch: loongarch64
+          - release: "11952"
             arch: armv7
           - release: ""
             arch: aarch64
@@ -248,7 +288,7 @@ jobs:
 
 
     runs-on: ${{ matrix.runs }}
-    name: nfs Redox
+    name: nfs Plan9
     env:
       MYTOKEN : ${{ secrets.MYTOKEN }}
       MYTOKEN2: "value2"
@@ -256,14 +296,14 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
     - uses: actions/checkout@v7
-    - name: Test in Redox
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
+    - name: Test in Plan9
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
       id: test
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         envs: 'DEBUG MYTOKEN MYTOKEN2'
         prepare: |
-          uname -a
+          echo anyvm
         mem: 4096
         release: ${{ matrix.release }}
         arch: ${{ matrix.arch }}
@@ -284,12 +324,14 @@ jobs:
           env
           echo "TEST_ENV=abc" >>${GITHUB_ENV}
           echo "textfromvm" >$GITHUB_WORKSPACE/vm.txt
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
 
     - name: Test NAT
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
       env:
         VM_USER: ""
       run: |
@@ -301,12 +343,14 @@ jobs:
         [ "$TEST_ENV" = "abc" ]
         ssh -v -p 20022 ${VM_USER:-root}@localhost "uname -a;whoami;pwd"
     - name: Test custom shell
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
-      shell: redox {0}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
+      shell: plan9 {0}
       run: |
         pwd
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
     - name: Collect VM debug artifacts
       if: failure()
@@ -337,7 +381,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release: [ "0.9.0"
+        release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
         runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
@@ -361,23 +405,41 @@ jobs:
           - runs: "ubuntu-24.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
-          - release: "0.9.0"
+          - release: "11554"
             arch: aarch64
-          - release: "0.9.0"
+          - release: "11554"
             arch: riscv64
-          - release: "0.9.0"
+          - release: "11554"
             arch: powerpc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: sparc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: ppc64le
-          - release: "0.9.0"
+          - release: "11554"
             arch: s390x
-          - release: "0.9.0"
+          - release: "11554"
             arch: i386
-          - release: "0.9.0"
+          - release: "11554"
             arch: loongarch64
-          - release: "0.9.0"
+          - release: "11554"
+            arch: armv7
+          - release: "11952"
+            arch: aarch64
+          - release: "11952"
+            arch: riscv64
+          - release: "11952"
+            arch: powerpc64
+          - release: "11952"
+            arch: sparc64
+          - release: "11952"
+            arch: ppc64le
+          - release: "11952"
+            arch: s390x
+          - release: "11952"
+            arch: i386
+          - release: "11952"
+            arch: loongarch64
+          - release: "11952"
             arch: armv7
           - release: ""
             arch: aarch64
@@ -400,7 +462,7 @@ jobs:
 
 
     runs-on: ${{ matrix.runs }}
-    name: scp Redox
+    name: scp Plan9
     env:
       MYTOKEN : ${{ secrets.MYTOKEN }}
       MYTOKEN2: "value2"
@@ -409,20 +471,20 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 #    - name: Creating Web console
-#      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
+#      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
 #      uses: vmactions/cf-tunnel@v0
 #      id: tunnel
 #      with:
 #        protocol: http
 #        port: 8000
-    - name: Test in Redox
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
+    - name: Test in Plan9
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
       id: test
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         envs: 'DEBUG MYTOKEN MYTOKEN2'
         prepare: |
-          uname -a
+          echo anyvm
         mem: 4096
         release: ${{ matrix.release }}
         arch: ${{ matrix.arch }}
@@ -445,12 +507,14 @@ jobs:
           env
           echo "TEST_ENV=abc" >>${GITHUB_ENV}
           echo "textfromvm" >$GITHUB_WORKSPACE/vm.txt
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
 
     - name: Test files
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
       env:
         VM_USER: ""
       run: |
@@ -466,17 +530,17 @@ jobs:
     # get no GITHUB_WORKSPACE (SendEnv excluded), so the custom shell does not
     # run in the synced work tree.
     - name: Prepare custom shell sync test file on host
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
       run: |
         echo "host-data" > hostfile.txt
     - name: Test custom shell file sync
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
-      shell: redox {0}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
+      shell: plan9 {0}
       run: |
         [ "$(cat hostfile.txt)" = "host-data" ]
         echo "vm-data" > vmfile.txt
     - name: Verify custom shell copyback on host
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
       run: |
         set -e
         [ "$(cat vmfile.txt)" = "vm-data" ]
@@ -520,29 +584,85 @@ jobs:
   # copyback.
   testtar:
     runs-on: ubuntu-24.04
-    name: tar Redox
+    name: tar Plan9
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
     - uses: actions/checkout@v7
-    - name: Test in Redox
-      if: ${{ contains('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
+    - name: Test in Plan9
+      if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
       id: test
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         mem: 4096
         debug: true
         sync: tar
         run: |
-          ls /work
-          echo tar-vm-data > /work/fromvm.txt
 
     - name: Verify tar copyback on host
-      if: ${{ contains('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
+      if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
       run: |
         set -e
         ls -lah "$HOME/work"
-        grep tar-vm-data "$HOME/work/fromvm.txt"
+
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+
+
+  # 9P share (Plan 9 / 9front). Same one-leg shape and same string-grep gate
+  # as testtar above, and for the same reason: 9p is that guest's ONLY
+  # transport, so without this job a 9p-only repo would run no test at all --
+  # every other job here is gated on rsync/scp/sshfs/nfs/tar. Unlike tar this
+  # is a LIVE mount (the runner mounts the guest's exportfs through the kernel
+  # v9fs client), so there is no copy-back: a file the guest writes is already
+  # on the host, which is exactly what the verify step checks. The in-guest
+  # body is per-repo data (VM_9P_RUN / VM_9P_VERIFY) because this guest speaks
+  # rc, not POSIX sh.
+  test9p:
+    runs-on: ubuntu-24.04
+    name: 9p Plan9
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Test in Plan9
+      if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', '9p') }}
+      id: test
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
+      with:
+        mem: 4096
+        debug: true
+        sync: 9p
+        run: |
+          echo 9p-vm-data > /usr/glenda/work/fromvm.txt
+          ls /usr/glenda/work
+
+    - name: Verify 9P share on host
+      if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', '9p') }}
+      run: |
+        set -e
+        ls -lah "$HOME/work"
+        grep 9p-vm-data "$HOME/work/fromvm.txt"
 
     - name: Collect VM debug artifacts
       if: failure()
@@ -573,7 +693,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release: [ "0.9.0"
+        release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
         runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
@@ -598,23 +718,41 @@ jobs:
           - runs: "ubuntu-24.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
-          - release: "0.9.0"
+          - release: "11554"
             arch: aarch64
-          - release: "0.9.0"
+          - release: "11554"
             arch: riscv64
-          - release: "0.9.0"
+          - release: "11554"
             arch: powerpc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: sparc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: ppc64le
-          - release: "0.9.0"
+          - release: "11554"
             arch: s390x
-          - release: "0.9.0"
+          - release: "11554"
             arch: i386
-          - release: "0.9.0"
+          - release: "11554"
             arch: loongarch64
-          - release: "0.9.0"
+          - release: "11554"
+            arch: armv7
+          - release: "11952"
+            arch: aarch64
+          - release: "11952"
+            arch: riscv64
+          - release: "11952"
+            arch: powerpc64
+          - release: "11952"
+            arch: sparc64
+          - release: "11952"
+            arch: ppc64le
+          - release: "11952"
+            arch: s390x
+          - release: "11952"
+            arch: i386
+          - release: "11952"
+            arch: loongarch64
+          - release: "11952"
             arch: armv7
           - release: ""
             arch: aarch64
@@ -638,21 +776,21 @@ jobs:
 
 
     runs-on: ${{ matrix.runs }}
-    name: rsync default Redox
+    name: rsync default Plan9
     env:
       MYTOKEN : ${{ secrets.MYTOKEN }}
       MYTOKEN2: "value2"
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
     - uses: actions/checkout@v7
-    - name: Test in Redox
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+    - name: Test in Plan9
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
       id: test
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         envs: 'MYTOKEN MYTOKEN2'
         prepare: |
-          uname -a
+          echo anyvm
         mem: 4096
         release: ${{ matrix.release }}
         arch: ${{ matrix.arch }}
@@ -667,11 +805,13 @@ jobs:
         run: |
           env
           echo "TEST_ENV=abc" >>${GITHUB_ENV}
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
     - name: Test NAT
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
       env:
         VM_USER: ""
       run: |
@@ -681,12 +821,14 @@ jobs:
         ssh -v  -p 20022 ${VM_USER:-root}@localhost  "uname -a;whoami;pwd"
 
     - name: Test custom shell
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
-      shell: redox {0}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      shell: plan9 {0}
       run: |
         pwd
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
     - name: Collect VM debug artifacts
       if: failure()
@@ -720,7 +862,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release: [ "0.9.0"
+        release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
         runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
@@ -744,23 +886,41 @@ jobs:
           - runs: "ubuntu-24.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
-          - release: "0.9.0"
+          - release: "11554"
             arch: aarch64
-          - release: "0.9.0"
+          - release: "11554"
             arch: riscv64
-          - release: "0.9.0"
+          - release: "11554"
             arch: powerpc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: sparc64
-          - release: "0.9.0"
+          - release: "11554"
             arch: ppc64le
-          - release: "0.9.0"
+          - release: "11554"
             arch: s390x
-          - release: "0.9.0"
+          - release: "11554"
             arch: i386
-          - release: "0.9.0"
+          - release: "11554"
             arch: loongarch64
-          - release: "0.9.0"
+          - release: "11554"
+            arch: armv7
+          - release: "11952"
+            arch: aarch64
+          - release: "11952"
+            arch: riscv64
+          - release: "11952"
+            arch: powerpc64
+          - release: "11952"
+            arch: sparc64
+          - release: "11952"
+            arch: ppc64le
+          - release: "11952"
+            arch: s390x
+          - release: "11952"
+            arch: i386
+          - release: "11952"
+            arch: loongarch64
+          - release: "11952"
             arch: armv7
           - release: ""
             arch: aarch64
@@ -784,21 +944,21 @@ jobs:
 
 
     runs-on: ${{ matrix.runs }}
-    name: customshell Redox
+    name: customshell Plan9
     env:
       MYTOKEN : ${{ secrets.MYTOKEN }}
       MYTOKEN2: "value2"
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
     - uses: actions/checkout@v7
-    - name: Test in Redox
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+    - name: Test in Plan9
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
       id: test
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         envs: 'MYTOKEN MYTOKEN2'
         prepare: |
-          uname -a
+          echo anyvm
         mem: 4096
         release: ${{ matrix.release }}
         arch: ${{ matrix.arch }}
@@ -813,11 +973,13 @@ jobs:
         run: |
           env
           echo "TEST_ENV=abc" >>${GITHUB_ENV}
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
     - name: Test NAT
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
       env:
         VM_USER: ""
       run: |
@@ -827,12 +989,14 @@ jobs:
         ssh -v  -p 20022 ${VM_USER:-root}@localhost  "uname -a;whoami;pwd"
 
     - name: Test custom shell
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
       shell: vmsh {0}
       run: |
         pwd
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
     # File round-trip through the custom shell with sync rsync: a file created
     # on the host must be visible inside the VM, and a file created in the VM
@@ -840,17 +1004,17 @@ jobs:
     # its guest gets no GITHUB_WORKSPACE (SendEnv excluded), so the custom
     # shell does not run in the synced work tree.
     - name: Prepare custom shell sync test file on host
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
       run: |
         echo "host-data" > hostfile.txt
     - name: Test custom shell file sync
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
       shell: vmsh {0}
       run: |
         [ "$(cat hostfile.txt)" = "host-data" ]
         echo "vm-data" > vmfile.txt
     - name: Verify custom shell copyback on host
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
       run: |
         set -e
         [ "$(cat vmfile.txt)" = "vm-data" ]
@@ -899,28 +1063,30 @@ jobs:
     strategy:
       fail-fast: false
     runs-on: ubuntu-24.04
-    name: cache-after-prepare seed Redox
+    name: cache-after-prepare seed Plan9
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
     - uses: actions/checkout@v7
-    - name: Test in Redox
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
+    - name: Test in Plan9
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
       id: test
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         mem: 4096
         debug: true
         debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
         cache-after-prepare: true
         prepare: |
-          uname -a
+          echo anyvm
           echo prepared >> "$HOME/.cache_after_prepare_count"
         run: |
           set -e
           [ "$(grep -c prepared "$HOME/.cache_after_prepare_count")" -eq 1 ]
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
     - name: Collect VM debug artifacts
       if: failure()
@@ -954,30 +1120,32 @@ jobs:
     strategy:
       fail-fast: false
     runs-on: ubuntu-24.04
-    name: cache-after-prepare hit Redox
+    name: cache-after-prepare hit Plan9
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
     - uses: actions/checkout@v7
     # The inputs (notably 'prepare' and the sync method) must be byte-identical
     # to the seed job above: the prepared-image cache key hashes them.
-    - name: Test in Redox
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
+    - name: Test in Plan9
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
       id: test
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         mem: 4096
         debug: true
         debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
         cache-after-prepare: true
         prepare: |
-          uname -a
+          echo anyvm
           echo prepared >> "$HOME/.cache_after_prepare_count"
         run: |
           set -e
           [ "$(grep -c prepared "$HOME/.cache_after_prepare_count")" -eq 1 ]
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
     # Hard assertion: this job runs right after the seed job with no
     # concurrent cache saves in this run (see the needs chain), so the
@@ -985,7 +1153,7 @@ jobs:
     # hit-path regression or cross-run cache churn from another ref -- both
     # worth a red job.
     - name: Verify prepare was skipped
-      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
+      if: ${{ contains(fromJSON('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
       run: |
         set -e
         echo "cache-after-prepare-hit=${{ steps.test.outputs.cache-after-prepare-hit }}"
@@ -1016,13 +1184,13 @@ jobs:
     strategy:
       fail-fast: false
     runs-on: ubuntu-24.04
-    name: test default error Redox
+    name: test default error Plan9
     steps:
     - uses: actions/checkout@v7
-    - name: Test in Redox
+    - name: Test in Plan9
       id: testerr
       continue-on-error: true
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         debug: true
         run: |
@@ -1043,13 +1211,13 @@ jobs:
     strategy:
       fail-fast: false
     runs-on: ubuntu-24.04
-    name: test default success Redox
+    name: test default success Plan9
     steps:
     - uses: actions/checkout@v7
-    - name: Test in Redox
+    - name: Test in Plan9
       id: testpass
       continue-on-error: true
-      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      uses: vmactions/plan9-vm@24fab6392806be3d4b41e6875571342c6710975d
       with:
         debug: true
         run: |
