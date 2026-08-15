@@ -1,6 +1,6 @@
-# Run GitHub CI in Redox 
+# Run GitHub CI in Plan9 
 
-![Test](https://github.com/vmactions/redox-vm/workflows/Test/badge.svg)
+![Test](https://github.com/vmactions/plan9-vm/workflows/Test/badge.svg)
 
 
 
@@ -15,7 +15,7 @@ Powered by [AnyVM.org](https://anyvm.org)
 >
 > These VMs are now AI-ready. With the **[vmactions-ci skill](https://github.com/vmactions/vmactions-skill)**, an AI coding agent -- Claude Code, Codex, Copilot CLI, Gemini CLI, and others -- understands the full vmactions interface and writes the GitHub Actions CI for you, **automatically**.
 >
-> Just describe what you want in plain language, e.g. *"run my tests on Redox"* or *"check that my project builds on Redox aarch64"*, and the agent generates a correct, ready-to-commit `test.yml`. It will:
+> Just describe what you want in plain language, e.g. *"run my tests on Plan9"* or *"check that my project builds on Plan9 aarch64"*, and the agent generates a correct, ready-to-commit `test.yml`. It will:
 >
 > - pick the right action, `release`, and `arch` for your target;
 > - install your toolchain and dependencies in the `prepare` step;
@@ -27,33 +27,31 @@ Powered by [AnyVM.org](https://anyvm.org)
 >
 > ### >> [Get the vmactions-ci skill](https://github.com/vmactions/vmactions-skill) <<
 
-Use this action to run your CI in Redox.
+Use this action to run your CI in Plan9.
 
-The github workflow only supports Ubuntu, Windows and MacOS. But what if you need to use Redox?
+The github workflow only supports Ubuntu, Windows and MacOS. But what if you need to use Plan9?
 
 
 All the supported releases are here:
 
 
 
-| Release | x86_64 |
+| Release (9front) | x86_64 (amd64) |
 |---------|---------|
-| 0.9.0 | ✅ (tar) |
+| 11952 | ✅ (9p) |
+| 11554 | ✅ (9p) |
 
-> ℹ️ **Telnet + tar, not SSH.** Redox ships no remote-access server of any
-> kind, so this builder bakes one in: the official prebuilt image is
-> downloaded and `files/anyvmd.rs` -- a `#![no_std]` agent -- is
-> offline-injected into it. anyvm drives that agent over telnet and syncs with
-> `--sync tar`, the same shape as the plan9 and reactos builders. `/bin/tar`
-> is already on the stock image, so unlike ReactOS nothing else has to be
-> baked in.
->
-> The agent links `redox-rt` rather than relibc, which is what makes it
-> possible: the 0.9.0 kernel has no process-creation syscall at all -- no
-> `clone`, `fexec`, `spawn` or `fork` -- because spawning moved into userspace
-> into redox-rt, and redox-rt is itself `no_std` and libc-independent.
-> See [NOTES.md](NOTES.md) and
-> [files/anyvmd-design.md](files/anyvmd-design.md).
+<!-- release-label: Release (9front) -->
+<!-- arch-label: x86_64 = x86_64 (amd64) -->
+
+<!-- 9front is a rolling upstream that keeps ONLY the newest image on
+     9front.org/iso/: when 11952 was published (2026-08-02, landed by the
+     watcher), 9front-11554.amd64.qcow2.gz was deleted upstream (HTTP 404,
+     build run 30768208391), so 11554 can never be rebuilt from source
+     again. Its tag is therefore left OUT of conf/all.release.conf (the
+     hand-owned build membership): the table row and the already-published
+     release assets stay usable, only the build stops. Expect to drop a
+     tag from the membership every time 9front cuts a release. -->
 
 
 
@@ -70,23 +68,25 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: A job to run test in Redox
+    name: A job to run test in Plan9
     env:
       MYTOKEN : ${{ secrets.MYTOKEN }}
       MYTOKEN2: "value2"
     steps:
     - uses: actions/checkout@v7
-    - name: Test in Redox
+    - name: Test in Plan9
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         envs: 'MYTOKEN MYTOKEN2'
         prepare: |
-          uname -a
+          echo anyvm
 
         run: |
+          echo anyvm
+          cat /dev/user
           uname -a
-          ls /work
+          ls /usr/glenda/work
 
 
 
@@ -132,7 +132,7 @@ The code is shared from the host to the VM via `rsync` by default, you can choos
 
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         sync: sshfs  # or: nfs
 
@@ -154,7 +154,7 @@ When using `rsync` or `scp`,  you can define `copyback: false` to not copy files
 
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         sync: rsync
         copyback: false
@@ -166,6 +166,13 @@ When using `rsync` or `scp`,  you can define `copyback: false` to not copy files
 ```
 
 
+Becareful:
+
+9front ships no sshd, so the usual `rsync` / `scp` / `sshfs` / `nfs` backends do not exist here. The workspace travels over 9P instead (`sync: 9p`, the only supported value): the runner mounts the guest's `exportfs` share with the Linux kernel v9fs client, copies your checked-out tree in before the run, and copies the tree back out when the run finishes.
+
+Both directions are one-shot copies, not a live share, so a file only appears on the other side once that copy has run.
+
+Your `prepare` and `run` scripts are executed by `rc`, not by a POSIX shell, and they run over the guest's telnet channel rather than ssh. Write them in `rc` syntax. `envs`, `debug-on-error` and custom `shell:` steps are not available on this VM.
 
 
 
@@ -177,7 +184,7 @@ You can add NAT port between the host and the VM.
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         nat: |
           "8080": "80"
@@ -196,7 +203,7 @@ The default memory of the VM is 6144MB, you can use `mem` option to set the memo
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         mem: 4096
 ...
@@ -210,7 +217,7 @@ The VM is using all the cpu cores of the host by default, you can use `cpu` opti
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         cpu: 3
 ...
@@ -219,31 +226,18 @@ The VM is using all the cpu cores of the host by default, you can use `cpu` opti
 
 ## 5. Select release
 
-It uses [the Redox 0.9.0](conf/default.release.conf) by default, you can use `release` option to use another version of Redox:
+It uses [the Plan9 11952](conf/default.release.conf) by default, you can use `release` option to use another version of Plan9:
 
 ```yaml
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
-        release: "0.9.0"
+        release: "11554"
 ...
 ```
 
-You can also give only the leading, `.` separated part of a release. The newest release that starts with it is used, so the workflow does not have to be edited for every point release:
-
-```yaml
-...
-    - name: Test
-      id: test
-      uses: vmactions/redox-vm@v0
-      with:
-        release: "0"
-...
-```
-
-Here `release: "0"` runs the newest `0.x` release of Redox. Give more parts to narrow it down: `release: "0.9"` runs the newest `0.9.x`. Each part you give has to match in full, so a release that does not exist fails the job instead of quietly falling back to another one.
 
 ## 6. Select architecture
 
@@ -253,7 +247,7 @@ The vm is using x86_64(AMD64) by default, but you can use `arch` option to chang
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         arch: aarch64
 ...
@@ -275,16 +269,16 @@ Support custom shell:
     - uses: actions/checkout@v7
     - name: Start VM
       id: vm
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         sync: nfs
     - name: Custom shell step 1
-      shell: redox {0}
+      shell: plan9 {0}
       run: |
         pwd
         echo "this is step 1, running inside the VM"
     - name: Custom shell step 2
-      shell: redox {0}
+      shell: plan9 {0}
       run: |
         pwd
         echo "this is step 2, running inside the VM"
@@ -306,7 +300,7 @@ You can also use `custom-shell-name` to set a custom name for the shell wrapper:
     - uses: actions/checkout@v7
     - name: Start VM
       id: vm
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         sync: nfs
         custom-shell-name: vmsh
@@ -332,7 +326,7 @@ If the time in VM is not correct, You can use `sync-time` option to synchronize 
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         sync-time: true
 ...
@@ -347,7 +341,7 @@ By default, the action caches `apt` packages on the host and VM images/artifacts
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         disable-cache: true
 ...
@@ -362,11 +356,11 @@ The `prepare` step (installing packages etc.) normally runs on every build. With
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         cache-after-prepare: true
         prepare: |
-          uname -a
+          echo anyvm
         run: |
           ...
 ...
@@ -395,7 +389,7 @@ Then use it in the workflow:
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
 
@@ -408,7 +402,7 @@ You can also set the `vnc-password` parameter to set a custom password to protec
 ...
     - name: Test
       id: test
-      uses: vmactions/redox-vm@v0
+      uses: vmactions/plan9-vm@v0
       with:
         debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
         vnc-password: ${{ secrets.VNC_PASSWORD }}
@@ -425,7 +419,7 @@ See more: [debug on error](https://github.com/vmactions/.github/wiki/debug%E2%80
 
 # Under the hood
 
-We use Qemu to run the Redox VM.
+We use Qemu to run the Plan9 VM.
 
 
 
