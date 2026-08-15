@@ -1,0 +1,1067 @@
+
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '*'
+    paths:
+      - '**.sh'
+      - '.github/workflows/test.yml'
+      - 'index.js'
+      - 'conf/*'
+      - 'hooks/*'
+
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+
+jobs:
+  testsshfs:
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [ "0.9.0"
+, ""]
+        arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
+        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        exclude:
+          - runs: "ubuntu-24.04-arm"
+            arch: ""
+          - runs: "ubuntu-24.04-arm"
+            arch: "riscv64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "powerpc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "sparc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "ppc64le"
+          - runs: "ubuntu-24.04-arm"
+            arch: "s390x"
+          - runs: "ubuntu-24.04-arm"
+            arch: "i386"
+          - runs: "ubuntu-24.04-arm"
+            arch: "loongarch64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "armv7"
+          # Manual matrix excludes only; combos with no conf are auto-excluded.
+          - release: "0.9.0"
+            arch: aarch64
+          - release: "0.9.0"
+            arch: riscv64
+          - release: "0.9.0"
+            arch: powerpc64
+          - release: "0.9.0"
+            arch: sparc64
+          - release: "0.9.0"
+            arch: ppc64le
+          - release: "0.9.0"
+            arch: s390x
+          - release: "0.9.0"
+            arch: i386
+          - release: "0.9.0"
+            arch: loongarch64
+          - release: "0.9.0"
+            arch: armv7
+          - release: ""
+            arch: aarch64
+          - release: ""
+            arch: riscv64
+          - release: ""
+            arch: powerpc64
+          - release: ""
+            arch: sparc64
+          - release: ""
+            arch: ppc64le
+          - release: ""
+            arch: s390x
+          - release: ""
+            arch: i386
+          - release: ""
+            arch: loongarch64
+          - release: ""
+            arch: armv7
+
+
+    runs-on: ${{ matrix.runs }}
+    name: sshfs Redox
+    env:
+      MYTOKEN : ${{ secrets.MYTOKEN }}
+      MYTOKEN2: "value2"
+      DEBUG: 1
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+#    - name: Creating Web console
+#      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
+#      uses: vmactions/cf-tunnel@v0
+#      id: tunnel
+#      with:
+#        protocol: http
+#        port: 8000
+
+    - name: Test in Redox
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
+      id: test
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        envs: 'DEBUG MYTOKEN MYTOKEN2'
+        prepare: |
+          uname -a
+        mem: 4096
+        release: ${{ matrix.release }}
+        arch: ${{ matrix.arch }}
+        nat: |
+          "20022": "22"
+          "8080": "80"
+          "8443": "443"
+          udp:"8081": "80"
+        debug: true
+        debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
+        sync: sshfs
+        run: |
+          set -e
+          ls -lah $HOME/work
+          if [ -z "$(ls -A $HOME/work)" ]; then
+            echo "sshfs error."
+            exit 1
+          fi
+          echo "TEST_ENV=abc" >>${GITHUB_ENV}
+          echo "textfromvm" >$GITHUB_WORKSPACE/vm.txt
+          uname -a
+          ls /work
+
+
+    - name: Test NAT
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
+      env:
+        VM_USER: ""
+      run: |
+        set -e
+        echo "TEST_ENV=$TEST_ENV"
+        [ "$TEST_ENV" = "abc" ]
+        ssh -v -p 20022 ${VM_USER:-root}@localhost  "uname -a;whoami;pwd"
+    - name: Test custom shell
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'sshfs') }}
+      shell: redox {0}
+      run: |
+        pwd
+          uname -a
+          ls /work
+
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+
+
+
+
+
+  testnfs:
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [ "0.9.0"
+, ""]
+        arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
+        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        exclude:
+          - runs: "ubuntu-24.04-arm"
+            arch: ""
+          - runs: "ubuntu-24.04-arm"
+            arch: "riscv64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "powerpc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "sparc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "ppc64le"
+          - runs: "ubuntu-24.04-arm"
+            arch: "s390x"
+          - runs: "ubuntu-24.04-arm"
+            arch: "i386"
+          - runs: "ubuntu-24.04-arm"
+            arch: "loongarch64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "armv7"
+          # Manual matrix excludes only; combos with no conf are auto-excluded.
+          - release: "0.9.0"
+            arch: aarch64
+          - release: "0.9.0"
+            arch: riscv64
+          - release: "0.9.0"
+            arch: powerpc64
+          - release: "0.9.0"
+            arch: sparc64
+          - release: "0.9.0"
+            arch: ppc64le
+          - release: "0.9.0"
+            arch: s390x
+          - release: "0.9.0"
+            arch: i386
+          - release: "0.9.0"
+            arch: loongarch64
+          - release: "0.9.0"
+            arch: armv7
+          - release: ""
+            arch: aarch64
+          - release: ""
+            arch: riscv64
+          - release: ""
+            arch: powerpc64
+          - release: ""
+            arch: sparc64
+          - release: ""
+            arch: ppc64le
+          - release: ""
+            arch: s390x
+          - release: ""
+            arch: i386
+          - release: ""
+            arch: loongarch64
+          - release: ""
+            arch: armv7
+
+
+    runs-on: ${{ matrix.runs }}
+    name: nfs Redox
+    env:
+      MYTOKEN : ${{ secrets.MYTOKEN }}
+      MYTOKEN2: "value2"
+      DEBUG: 1
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Test in Redox
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
+      id: test
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        envs: 'DEBUG MYTOKEN MYTOKEN2'
+        prepare: |
+          uname -a
+        mem: 4096
+        release: ${{ matrix.release }}
+        arch: ${{ matrix.arch }}
+        nat: |
+          "20022": "22"
+          "8080": "80"
+          "8443": "443"
+          udp:"8081": "80"
+        debug: true
+        debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
+        sync: nfs
+        run: |
+          ls -lah $HOME/work
+          if [ -z "$(ls -A $HOME/work)" ]; then
+            echo "nfs error."
+            exit 1
+          fi
+          env
+          echo "TEST_ENV=abc" >>${GITHUB_ENV}
+          echo "textfromvm" >$GITHUB_WORKSPACE/vm.txt
+          uname -a
+          ls /work
+
+
+    - name: Test NAT
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
+      env:
+        VM_USER: ""
+      run: |
+        set -e
+        [ -e "$GITHUB_WORKSPACE/vm.txt" ];
+        cat "$GITHUB_WORKSPACE/vm.txt";
+        grep "textfromvm" $GITHUB_WORKSPACE/vm.txt;
+        echo "TEST_ENV=$TEST_ENV"
+        [ "$TEST_ENV" = "abc" ]
+        ssh -v -p 20022 ${VM_USER:-root}@localhost "uname -a;whoami;pwd"
+    - name: Test custom shell
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'nfs') }}
+      shell: redox {0}
+      run: |
+        pwd
+          uname -a
+          ls /work
+
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+
+
+
+  testscp:
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [ "0.9.0"
+, ""]
+        arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
+        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        exclude:
+          - runs: "ubuntu-24.04-arm"
+            arch: ""
+          - runs: "ubuntu-24.04-arm"
+            arch: "riscv64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "powerpc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "sparc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "ppc64le"
+          - runs: "ubuntu-24.04-arm"
+            arch: "s390x"
+          - runs: "ubuntu-24.04-arm"
+            arch: "i386"
+          - runs: "ubuntu-24.04-arm"
+            arch: "loongarch64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "armv7"
+          # Manual matrix excludes only; combos with no conf are auto-excluded.
+          - release: "0.9.0"
+            arch: aarch64
+          - release: "0.9.0"
+            arch: riscv64
+          - release: "0.9.0"
+            arch: powerpc64
+          - release: "0.9.0"
+            arch: sparc64
+          - release: "0.9.0"
+            arch: ppc64le
+          - release: "0.9.0"
+            arch: s390x
+          - release: "0.9.0"
+            arch: i386
+          - release: "0.9.0"
+            arch: loongarch64
+          - release: "0.9.0"
+            arch: armv7
+          - release: ""
+            arch: aarch64
+          - release: ""
+            arch: riscv64
+          - release: ""
+            arch: powerpc64
+          - release: ""
+            arch: sparc64
+          - release: ""
+            arch: ppc64le
+          - release: ""
+            arch: s390x
+          - release: ""
+            arch: i386
+          - release: ""
+            arch: loongarch64
+          - release: ""
+            arch: armv7
+
+
+    runs-on: ${{ matrix.runs }}
+    name: scp Redox
+    env:
+      MYTOKEN : ${{ secrets.MYTOKEN }}
+      MYTOKEN2: "value2"
+      DEBUG: 1
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+#    - name: Creating Web console
+#      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
+#      uses: vmactions/cf-tunnel@v0
+#      id: tunnel
+#      with:
+#        protocol: http
+#        port: 8000
+    - name: Test in Redox
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
+      id: test
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        envs: 'DEBUG MYTOKEN MYTOKEN2'
+        prepare: |
+          uname -a
+        mem: 4096
+        release: ${{ matrix.release }}
+        arch: ${{ matrix.arch }}
+        nat: |
+          "20022": "22"
+          "8080": "80"
+          "8443": "443"
+          udp:"8081": "80"
+        debug: true
+        debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
+        sync: scp
+        run: |
+          ls -lah $HOME/work
+          #don't use tree here, freebsd riscv64 doesn't have a tree
+          #tree $HOME/work/
+          if [ -z "$(ls -A $HOME/work)" ]; then
+            echo "nfs error."
+            exit 1
+          fi
+          env
+          echo "TEST_ENV=abc" >>${GITHUB_ENV}
+          echo "textfromvm" >$GITHUB_WORKSPACE/vm.txt
+          uname -a
+          ls /work
+
+
+    - name: Test files
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') }}
+      env:
+        VM_USER: ""
+      run: |
+        set -e
+        [ -e "$GITHUB_WORKSPACE/vm.txt" ];
+        cat "$GITHUB_WORKSPACE/vm.txt";
+        grep "textfromvm" $GITHUB_WORKSPACE/vm.txt;
+        cat ${GITHUB_ENV}
+        echo "TEST_ENV=$TEST_ENV";
+        [ "$TEST_ENV" = "abc" ];
+    # File round-trip through the custom shell with sync scp (same as the
+    # rsync test in testcustomshell). Skipped on Haiku/BlissOS: their guests
+    # get no GITHUB_WORKSPACE (SendEnv excluded), so the custom shell does not
+    # run in the synced work tree.
+    - name: Prepare custom shell sync test file on host
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
+      run: |
+        echo "host-data" > hostfile.txt
+    - name: Test custom shell file sync
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
+      shell: redox {0}
+      run: |
+        [ "$(cat hostfile.txt)" = "host-data" ]
+        echo "vm-data" > vmfile.txt
+    - name: Verify custom shell copyback on host
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'scp') && !contains(github.repository, 'haiku') && !contains(github.repository, 'blissos') }}
+      run: |
+        set -e
+        [ "$(cat vmfile.txt)" = "vm-data" ]
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+
+
+  # One-shot tar sync (push at boot, pull at the end). This is the ONLY
+  # transport the telnet guests (ReactOS, Redox, RISC OS) have, and a
+  # declared-but-otherwise-untested method on the ssh guests whose builders
+  # list it. ONE leg per repo, on purpose: default release, default arch --
+  # tar's transport does not vary per release, so a full matrix would only
+  # burn runners. The gate greps the rendered sync map JSON as a string
+  # ('tar' is not a substring of any other method name); a per-arch lookup
+  # would wrongly skip the repos with no x86_64 arch at all (ReactOS is
+  # i386-only, RISC OS armv7-only -- their default arch comes from
+  # DEFAULT_ARCH in conf/default.release.conf). The in-guest command body is
+  # per-repo data (VM_TAR_RUN / VM_TAR_VERIFY in datafile.ini): the telnet
+  # guests speak their own command languages, so no shared POSIX script can
+  # run everywhere. A repo that defines neither still tests boot + push +
+  # copyback.
+  testtar:
+    runs-on: ubuntu-24.04
+    name: tar Redox
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Test in Redox
+      if: ${{ contains('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
+      id: test
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        mem: 4096
+        debug: true
+        sync: tar
+        run: |
+          ls /work
+          echo tar-vm-data > /work/fromvm.txt
+
+    - name: Verify tar copyback on host
+      if: ${{ contains('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
+      run: |
+        set -e
+        ls -lah "$HOME/work"
+        grep tar-vm-data "$HOME/work/fromvm.txt"
+
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+
+
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [ "0.9.0"
+, ""]
+        arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
+        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        disableCache: [ "", "true"]
+        exclude:
+          - runs: "ubuntu-24.04-arm"
+            arch: ""
+          - runs: "ubuntu-24.04-arm"
+            arch: "riscv64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "powerpc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "sparc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "ppc64le"
+          - runs: "ubuntu-24.04-arm"
+            arch: "s390x"
+          - runs: "ubuntu-24.04-arm"
+            arch: "i386"
+          - runs: "ubuntu-24.04-arm"
+            arch: "loongarch64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "armv7"
+          # Manual matrix excludes only; combos with no conf are auto-excluded.
+          - release: "0.9.0"
+            arch: aarch64
+          - release: "0.9.0"
+            arch: riscv64
+          - release: "0.9.0"
+            arch: powerpc64
+          - release: "0.9.0"
+            arch: sparc64
+          - release: "0.9.0"
+            arch: ppc64le
+          - release: "0.9.0"
+            arch: s390x
+          - release: "0.9.0"
+            arch: i386
+          - release: "0.9.0"
+            arch: loongarch64
+          - release: "0.9.0"
+            arch: armv7
+          - release: ""
+            arch: aarch64
+          - release: ""
+            arch: riscv64
+          - release: ""
+            arch: powerpc64
+          - release: ""
+            arch: sparc64
+          - release: ""
+            arch: ppc64le
+          - release: ""
+            arch: s390x
+          - release: ""
+            arch: i386
+          - release: ""
+            arch: loongarch64
+          - release: ""
+            arch: armv7
+
+
+
+    runs-on: ${{ matrix.runs }}
+    name: rsync default Redox
+    env:
+      MYTOKEN : ${{ secrets.MYTOKEN }}
+      MYTOKEN2: "value2"
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Test in Redox
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      id: test
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        envs: 'MYTOKEN MYTOKEN2'
+        prepare: |
+          uname -a
+        mem: 4096
+        release: ${{ matrix.release }}
+        arch: ${{ matrix.arch }}
+        nat: |
+          "20022": "22"
+          "8080": "80"
+          "8443": "443"
+          udp:"8081": "80"
+        debug: true
+        debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
+        disable-cache: ${{ matrix.disableCache }}
+        run: |
+          env
+          echo "TEST_ENV=abc" >>${GITHUB_ENV}
+          uname -a
+          ls /work
+
+    - name: Test NAT
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      env:
+        VM_USER: ""
+      run: |
+        set -e
+        echo "TEST_ENV=$TEST_ENV"
+        [ "$TEST_ENV" = "abc" ]
+        ssh -v  -p 20022 ${VM_USER:-root}@localhost  "uname -a;whoami;pwd"
+
+    - name: Test custom shell
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      shell: redox {0}
+      run: |
+        pwd
+          uname -a
+          ls /work
+
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+
+
+
+
+
+
+  testcustomshell:
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [ "0.9.0"
+, ""]
+        arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
+        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        exclude:
+          - runs: "ubuntu-24.04-arm"
+            arch: ""
+          - runs: "ubuntu-24.04-arm"
+            arch: "riscv64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "powerpc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "sparc64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "ppc64le"
+          - runs: "ubuntu-24.04-arm"
+            arch: "s390x"
+          - runs: "ubuntu-24.04-arm"
+            arch: "i386"
+          - runs: "ubuntu-24.04-arm"
+            arch: "loongarch64"
+          - runs: "ubuntu-24.04-arm"
+            arch: "armv7"
+          # Manual matrix excludes only; combos with no conf are auto-excluded.
+          - release: "0.9.0"
+            arch: aarch64
+          - release: "0.9.0"
+            arch: riscv64
+          - release: "0.9.0"
+            arch: powerpc64
+          - release: "0.9.0"
+            arch: sparc64
+          - release: "0.9.0"
+            arch: ppc64le
+          - release: "0.9.0"
+            arch: s390x
+          - release: "0.9.0"
+            arch: i386
+          - release: "0.9.0"
+            arch: loongarch64
+          - release: "0.9.0"
+            arch: armv7
+          - release: ""
+            arch: aarch64
+          - release: ""
+            arch: riscv64
+          - release: ""
+            arch: powerpc64
+          - release: ""
+            arch: sparc64
+          - release: ""
+            arch: ppc64le
+          - release: ""
+            arch: s390x
+          - release: ""
+            arch: i386
+          - release: ""
+            arch: loongarch64
+          - release: ""
+            arch: armv7
+
+
+
+    runs-on: ${{ matrix.runs }}
+    name: customshell Redox
+    env:
+      MYTOKEN : ${{ secrets.MYTOKEN }}
+      MYTOKEN2: "value2"
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Test in Redox
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      id: test
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        envs: 'MYTOKEN MYTOKEN2'
+        prepare: |
+          uname -a
+        mem: 4096
+        release: ${{ matrix.release }}
+        arch: ${{ matrix.arch }}
+        nat: |
+          "20022": "22"
+          "8080": "80"
+          "8443": "443"
+          udp:"8081": "80"
+        debug: true
+        debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
+        custom-shell-name: vmsh
+        run: |
+          env
+          echo "TEST_ENV=abc" >>${GITHUB_ENV}
+          uname -a
+          ls /work
+
+    - name: Test NAT
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      env:
+        VM_USER: ""
+      run: |
+        set -e
+        echo "TEST_ENV=$TEST_ENV"
+        [ "$TEST_ENV" = "abc" ]
+        ssh -v  -p 20022 ${VM_USER:-root}@localhost  "uname -a;whoami;pwd"
+
+    - name: Test custom shell
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') }}
+      shell: vmsh {0}
+      run: |
+        pwd
+          uname -a
+          ls /work
+
+    # File round-trip through the custom shell with sync rsync: a file created
+    # on the host must be visible inside the VM, and a file created in the VM
+    # must come back to the host (vmactions/freebsd-vm#128). Skipped on Haiku:
+    # its guest gets no GITHUB_WORKSPACE (SendEnv excluded), so the custom
+    # shell does not run in the synced work tree.
+    - name: Prepare custom shell sync test file on host
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
+      run: |
+        echo "host-data" > hostfile.txt
+    - name: Test custom shell file sync
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
+      shell: vmsh {0}
+      run: |
+        [ "$(cat hostfile.txt)" = "host-data" ]
+        echo "vm-data" > vmfile.txt
+    - name: Verify custom shell copyback on host
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')[matrix.arch == '' && 'x86_64' || matrix.arch], 'rsync') && !contains(github.repository, 'haiku') }}
+      run: |
+        set -e
+        [ "$(cat vmfile.txt)" = "vm-data" ]
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+
+
+
+
+
+  # cache-after-prepare: the first job seeds (or reuses) the prepared-image
+  # cache; the second job must then restore it, skip 'prepare', and still see
+  # prepare's effect inside the VM. The marker file counts how many times
+  # 'prepare' ever ran in the booted image: it must be exactly 1 in both jobs
+  # (a second 'prepare' run on the cached image would make it 2).
+  #
+  # Both jobs run AFTER the whole matrix: the matrix jobs save dozens of
+  # 1-2GB base caches, and on big repos (freebsd) that churn blows the 10GB
+  # repo cache budget and LRU-evicts the prepared entry while the hit job
+  # sits in the runner queue. Running last, seed and hit execute back to
+  # back with no concurrent saves in this run. !cancelled() keeps them
+  # running even when a flaky matrix job fails.
+  testcacheafterprepare:
+    needs: [ testsshfs, testnfs, testscp, test, testcustomshell, testerr, testpass ]
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-24.04
+    name: cache-after-prepare seed Redox
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Test in Redox
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
+      id: test
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        mem: 4096
+        debug: true
+        debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
+        cache-after-prepare: true
+        prepare: |
+          uname -a
+          echo prepared >> "$HOME/.cache_after_prepare_count"
+        run: |
+          set -e
+          [ "$(grep -c prepared "$HOME/.cache_after_prepare_count")" -eq 1 ]
+          uname -a
+          ls /work
+
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+  testcacheafterpreparehit:
+    needs: testcacheafterprepare
+    # Explicit condition: the default success() walks the WHOLE needs chain,
+    # so a flaky matrix job upstream of the seed job would silently skip this
+    # one even though the seed itself succeeded. Only the seed's own result
+    # matters here.
+    if: ${{ !cancelled() && needs.testcacheafterprepare.result == 'success' }}
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-24.04
+    name: cache-after-prepare hit Redox
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+    - uses: actions/checkout@v7
+    # The inputs (notably 'prepare' and the sync method) must be byte-identical
+    # to the seed job above: the prepared-image cache key hashes them.
+    - name: Test in Redox
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
+      id: test
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        mem: 4096
+        debug: true
+        debug-on-error: ${{ vars.DEBUG_ON_ERROR }}
+        cache-after-prepare: true
+        prepare: |
+          uname -a
+          echo prepared >> "$HOME/.cache_after_prepare_count"
+        run: |
+          set -e
+          [ "$(grep -c prepared "$HOME/.cache_after_prepare_count")" -eq 1 ]
+          uname -a
+          ls /work
+
+    # Hard assertion: this job runs right after the seed job with no
+    # concurrent cache saves in this run (see the needs chain), so the
+    # prepared entry must still be present. A miss here means either a real
+    # hit-path regression or cross-run cache churn from another ref -- both
+    # worth a red job.
+    - name: Verify prepare was skipped
+      if: ${{ contains(fromJSON('{"x86_64":["tar"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}')['x86_64'], 'rsync') }}
+      run: |
+        set -e
+        echo "cache-after-prepare-hit=${{ steps.test.outputs.cache-after-prepare-hit }}"
+        [ "${{ steps.test.outputs.cache-after-prepare-hit }}" = "true" ]
+    - name: Collect VM debug artifacts
+      if: failure()
+      run: |
+        mkdir -p ./vm-debug-artifacts
+        find /home/runner/work/_actions -type d -name output 2>/dev/null | while read d; do
+          find "$d" -type f \( -name "*.log" -o -name "*.ppm" \) | while read f; do
+            rel="${f#/home/runner/work/_actions/}"
+            mkdir -p "./vm-debug-artifacts/$(dirname "$rel")"
+            cp "$f" "./vm-debug-artifacts/$rel"
+          done
+        done
+        echo "Collected:"
+        find ./vm-debug-artifacts -type f || true
+    - name: Upload VM debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: vm-debug-${{ github.job }}-${{ strategy.job-index }}
+        path: vm-debug-artifacts/
+        retention-days: 7
+        if-no-files-found: ignore
+
+  testerr:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-24.04
+    name: test default error Redox
+    steps:
+    - uses: actions/checkout@v7
+    - name: Test in Redox
+      id: testerr
+      continue-on-error: true
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        debug: true
+        run: |
+          echo "this is an error"
+          false
+    - name: Verify that the previous step failed
+      if: steps.testerr.outcome != 'failure'
+      run: |
+        echo "The step was expected to fail, but it succeeded!"
+        exit 1
+    - name: Verify that the previous step succeeded
+      if: steps.testerr.outcome == 'failure'
+      run: |
+        echo "The step was expected to fail, and it failed!"
+        exit 0
+
+  testpass:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-24.04
+    name: test default success Redox
+    steps:
+    - uses: actions/checkout@v7
+    - name: Test in Redox
+      id: testpass
+      continue-on-error: true
+      uses: vmactions/redox-vm@0b0767a302739ffe3c1fb5f1deca97b77d5ffc12
+      with:
+        debug: true
+        run: |
+          echo "this is a normal command"
+          true
+    - name: Verify that the previous step succeeded
+      if: steps.testpass.outcome != 'success'
+      run: |
+        echo "The step was expected to succeed, but it failed!"
+        exit 1
+    - name: Verify that the previous step failed
+      if: steps.testpass.outcome == 'success'
+      run: |
+        echo "The step was expected to succeed, and it succeeded!"
+        exit 0

@@ -1,0 +1,1 @@
+        grep 9p-vm-data "$HOME/work/fromvm.txt"

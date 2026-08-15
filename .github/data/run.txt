@@ -1,0 +1,4 @@
+          echo anyvm
+          cat /dev/user
+          uname -a
+          ls /usr/glenda/work

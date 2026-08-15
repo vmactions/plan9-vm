@@ -1,0 +1,2 @@
+          echo 9p-vm-data > /usr/glenda/work/fromvm.txt
+          ls /usr/glenda/work

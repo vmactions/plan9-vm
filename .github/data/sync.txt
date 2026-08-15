@@ -1,0 +1,7 @@
+Becareful:
+
+9front ships no sshd, so the usual `rsync` / `scp` / `sshfs` / `nfs` backends do not exist here. The workspace travels over 9P instead (`sync: 9p`, the only supported value): the runner mounts the guest's `exportfs` share with the Linux kernel v9fs client, copies your checked-out tree in before the run, and copies the tree back out when the run finishes.
+
+Both directions are one-shot copies, not a live share, so a file only appears on the other side once that copy has run.
+
+Your `prepare` and `run` scripts are executed by `rc`, not by a POSIX shell, and they run over the guest's telnet channel rather than ssh. Write them in `rc` syntax. `envs`, `debug-on-error` and custom `shell:` steps are not available on this VM.
