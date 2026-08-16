@@ -588,7 +588,20 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
+    # Sparse on purpose. The workspace IS the payload here, and this repo
+    # commits node_modules -- 4636 of its 4662 files, 35 MB of npm packages
+    # that prove nothing about the sync path. The agent guests move a few MB
+    # per minute (measured: 42 MB over 9P took 4.5 min each way), so a full
+    # checkout turns this job into an npm bulk-transfer benchmark -- it is
+    # what left the ReactOS push without a completion marker after 12
+    # minutes. The action under test is fetched into _actions, which the
+    # sync excludes anyway, so it is unaffected.
     - uses: actions/checkout@v7
+      with:
+        sparse-checkout: |
+          conf
+          .github
+        sparse-checkout-cone-mode: true
     - name: Test in Plan9
       if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
       id: test
@@ -644,7 +657,15 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
+    # Sparse for the same reason as testtar above: the workspace is the
+    # payload, and 35 MB of committed node_modules measures the guest's
+    # patience rather than the 9P path.
     - uses: actions/checkout@v7
+      with:
+        sparse-checkout: |
+          conf
+          .github
+        sparse-checkout-cone-mode: true
     - name: Test in Plan9
       if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', '9p') }}
       id: test
@@ -1192,22 +1213,34 @@ jobs:
     runs-on: ubuntu-24.04
     name: test default error Plan9
     steps:
+    # Sparse, like testtar/test9p: this job runs with the repo's DEFAULT sync,
+    # which on the agent guests is the tar or 9P channel, and it would
+    # otherwise ship 35 MB of committed node_modules through it just to check
+    # that a failing command reports failure.
     - uses: actions/checkout@v7
+      with:
+        sparse-checkout: |
+          conf
+          .github
+        sparse-checkout-cone-mode: true
     - name: Test in Plan9
       id: testerr
       continue-on-error: true
       uses: vmactions/plan9-vm@e44f0e88cd401bdb5ea3c52debc2ad5666bca567
       with:
         debug: true
-        # A command that exists nowhere, rather than `false`: this body is
-        # shared by every guest, and the agent guests do not run a POSIX
-        # shell. 9front has no /bin/false at all (probed live), so `false`
-        # only "worked" there by failing for the wrong reason; cmd.exe on
-        # ReactOS has neither. An unknown command name is the one thing sh,
-        # rc, cmd.exe and ion all report as a failure.
+        # A command that EXISTS and fails, rather than `false` or a made-up
+        # name. This body is shared by every guest and the agent guests do
+        # not run a POSIX shell: 9front has no /bin/false (probed live), and
+        # cmd.exe has none either. An unknown NAME is worse still -- ion on
+        # Redox aborts the whole line with "pipeline execution error", so the
+        # `|| marker` arm never runs and the exec waits out its full timeout
+        # (measured: rc 124 instead of a prompt failure). A failing `ls` is
+        # reported the ordinary way by sh, rc and ion, and cmd.exe treats the
+        # missing `ls` itself as a plain command failure.
         run: |
           echo this is an error
-          anyvm-no-such-command
+          ls /no/such/path
     - name: Verify that the previous step failed
       if: steps.testerr.outcome != 'failure'
       run: |
@@ -1225,7 +1258,17 @@ jobs:
     runs-on: ubuntu-24.04
     name: test default success Plan9
     steps:
+    # Sparse, same reason as testerr above -- and this is the job the full
+    # payload actually broke: the ReactOS push spent 12 minutes on those
+    # node_modules and still had no completion marker, and the RISC OS
+    # copy-back corrupted its archive at that size while the small-payload
+    # tar job passed.
     - uses: actions/checkout@v7
+      with:
+        sparse-checkout: |
+          conf
+          .github
+        sparse-checkout-cone-mode: true
     - name: Test in Plan9
       id: testpass
       continue-on-error: true
