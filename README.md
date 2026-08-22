@@ -238,7 +238,7 @@ The VM is using all the cpu cores of the host by default, you can use `cpu` opti
 
 ## 5. Select release
 
-It uses [the Plan9 11952](conf/default.release.conf) by default, you can use `release` option to use another version of Plan9:
+It uses [the Plan9 11954](conf/default.release.conf) by default, you can use `release` option to use another version of Plan9:
 
 ```yaml
 ...
