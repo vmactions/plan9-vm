@@ -1,6 +1,6 @@
 {
   "name": "vmactions-Plan9",
-  "version": "",
+  "version": "1.0.0",
   "description": "GitHub actions for Plan9",
   "type": "module",
   "main": "index.js",
