@@ -43,25 +43,25 @@ jobs:
         release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
-        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        runs: [ "ubuntu-26.04", "ubuntu-26.04-arm"]
         exclude:
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: ""
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "riscv64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "powerpc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "sparc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "ppc64le"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "s390x"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "i386"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "loongarch64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
           - release: "11554"
@@ -232,25 +232,25 @@ jobs:
         release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
-        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        runs: [ "ubuntu-26.04", "ubuntu-26.04-arm"]
         exclude:
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: ""
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "riscv64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "powerpc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "sparc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "ppc64le"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "s390x"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "i386"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "loongarch64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
           - release: "11554"
@@ -414,25 +414,25 @@ jobs:
         release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
-        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        runs: [ "ubuntu-26.04", "ubuntu-26.04-arm"]
         exclude:
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: ""
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "riscv64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "powerpc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "sparc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "ppc64le"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "s390x"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "i386"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "loongarch64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
           - release: "11554"
@@ -623,7 +623,7 @@ jobs:
     # the guests whose builder does not list tar still spawn this job and green
     # it with every step skipped.
     if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', 'tar') }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: tar Plan9
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -695,7 +695,7 @@ jobs:
     # Repo-level gate -- see testtar. Only the 9p guests have this transport,
     # so on every other repo this job was a green do-nothing.
     if: ${{ contains('{"x86_64":["9p"],"aarch64":[],"riscv64":[],"powerpc64":[],"sparc64":[],"ppc64le":[],"s390x":[],"i386":[],"loongarch64":[],"armv7":[]}', '9p') }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: 9p Plan9
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -764,26 +764,26 @@ jobs:
         release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
-        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        runs: [ "ubuntu-26.04", "ubuntu-26.04-arm"]
         disableCache: [ "", "true"]
         exclude:
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: ""
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "riscv64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "powerpc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "sparc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "ppc64le"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "s390x"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "i386"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "loongarch64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
           - release: "11554"
@@ -941,25 +941,25 @@ jobs:
         release: [ "11554", "11952"
 , ""]
         arch: [ "aarch64", "", "riscv64", "powerpc64", "sparc64", "ppc64le", "s390x", "i386", "loongarch64", "armv7"]
-        runs: [ "ubuntu-24.04", "ubuntu-24.04-arm"]
+        runs: [ "ubuntu-26.04", "ubuntu-26.04-arm"]
         exclude:
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: ""
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "riscv64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "powerpc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "sparc64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "ppc64le"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "s390x"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "i386"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "loongarch64"
-          - runs: "ubuntu-24.04-arm"
+          - runs: "ubuntu-26.04-arm"
             arch: "armv7"
           # Manual matrix excludes only; combos with no conf are auto-excluded.
           - release: "11554"
@@ -1144,7 +1144,7 @@ jobs:
     if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: cache-after-prepare seed Plan9
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -1201,7 +1201,7 @@ jobs:
     if: ${{ !cancelled() && needs.testcacheafterprepare.result == 'success' }}
     strategy:
       fail-fast: false
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: cache-after-prepare hit Plan9
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -1271,7 +1271,7 @@ jobs:
     if: ${{ !contains(github.repository, 'riscos') }}
     strategy:
       fail-fast: false
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: test default error Plan9
     steps:
     # Sparse, like testtar/test9p: this job runs with the repo's DEFAULT sync,
@@ -1316,7 +1316,7 @@ jobs:
   testpass:
     strategy:
       fail-fast: false
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: test default success Plan9
     steps:
     # Sparse, same reason as testerr above -- and this is the job the full
